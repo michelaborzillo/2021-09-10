@@ -119,35 +119,43 @@ public class YelpDao {
 			return null;
 		}
 	}
+
+	public List<String> loadCitta() {
+	String sql="SELECT distinct b.city AS citta "
+			+ "FROM business b "
+			+ "ORDER BY citta";
+	List<String> result= new ArrayList<String>();
 	
-	public List<String> getAllCitta () {
-		String sql="SELECT DISTINCT city "
-				+ "FROM business";
-		List<String> result= new ArrayList<String>();
-		Connection conn = DBConnect.getConnection();
+	Connection conn = DBConnect.getConnection();
 
-		try {
-			PreparedStatement st = conn.prepareStatement(sql);
-			ResultSet res = st.executeQuery();
-			while (res.next()) {
-				String citta= res.getString("city");
-				result.add(citta);
-			}
-			conn.close();
-			return result;
+	try {
+		PreparedStatement st = conn.prepareStatement(sql);
+		ResultSet res = st.executeQuery();
+		while (res.next()) {
+
+			String s= res.getString("citta");
+			
+			result.add(s);
+		}
+		res.close();
+		st.close();
+		conn.close();
+		return result;
 		
-			}catch (SQLException e) {
-				e.printStackTrace();
-				return null;
-			}
+	} catch (SQLException e) {
+		e.printStackTrace();
+		return null;
 	}
-
-	/*public List<String> getLocali(String citta, Map<String, String> idMap) {
-		String sql="SELECT business_name, business_id "
-				+ "FROM business "
-				+ "WHERE city=?";
 		
-		List<String> result= new ArrayList<String>();
+	}
+	
+
+	public List<Locale> getVertici (String citta) {
+		String sql="SELECT b.business_id AS id, b.business_name AS name, b.latitude AS lati, b.longitude AS longi "
+				+ "FROM business b "
+				+ "WHERE b.city=?";
+		List<Locale> result= new ArrayList<Locale>();
+		
 		Connection conn = DBConnect.getConnection();
 
 		try {
@@ -155,141 +163,78 @@ public class YelpDao {
 			st.setString(1, citta);
 			ResultSet res = st.executeQuery();
 			while (res.next()) {
-				String string = res.getString("business_id");
-				idMap.put(res.getString("business_id"), string);
-				result.add(idMap.get(string));
+				Locale loc = new Locale(res.getString("id"), res.getString("name"), res.getDouble("lati"), res.getDouble("longi"));
+				result.add(loc);
+			
 			}
+			res.close();
+			st.close();
 			conn.close();
 			return result;
 			
-		}
-		catch (SQLException e) {
+		} catch (SQLException e) {
 			e.printStackTrace();
 			return null;
 		}
-		
-	}*/
-
-	/*public List<CoppiaLocali> getCoppiaLocali(String citta, Map<String, String> idMap) {
-		String sql= "SELECT b1.business_id AS business_id1, b2.business_id AS business_id2, b1.longitude AS longb1, b1.latitude AS latb1, b2.longitude AS longb2, b2.latitude AS latb2 "
+			
+	}
+	
+	
+	public double getPeso (Locale l1, Locale l2) {
+		String sql="SELECT b1.latitude AS lat1, b1.longitude AS long1, b2.latitude AS lat2, b2.longitude AS long2 "
 				+ "FROM business b1, business b2 "
-				+ "WHERE b1.city=? AND b2.city=? "
-				+"GROUP BY b1.business_id, b2.business_id";
-		Connection conn = DBConnect.getConnection();
-		List<CoppiaLocali> result= new ArrayList<CoppiaLocali>();
+				+ "WHERE b1.business_id=? AND b2.business_id=?";
+		double peso=0;
+		Connection conn= DBConnect.getConnection();
 		try {
 			PreparedStatement st = conn.prepareStatement(sql);
-			st.setString(1, citta);
-			st.setString(2, citta);
-			ResultSet res = st.executeQuery();
-			while (res.next()) {
-				String l1= res.getString("business_id1");
-				String l2= res.getString("business_id2");
-				LatLng peso1= new LatLng(res.getDouble("latb1"), res.getDouble("longb1"));
-				LatLng peso2= new LatLng(res.getDouble("latb2"), res.getDouble("longb2"));
+			st.setString(1, l1.getBusiness_id());
+			st.setString(2, l2.getBusiness_id());
+			ResultSet res=st.executeQuery();
+			if (res.next()) {
+				LatLng la1=new LatLng(res.getDouble("lat1"), res.getDouble("long1"));
+				LatLng la2=new LatLng(res.getDouble("lat2"), res.getDouble("long2"));
+				peso= LatLngTool.distance(la1, la2, LengthUnit.KILOMETER);
 				
-				double peso=LatLngTool.distance(peso1, peso2, LengthUnit.KILOMETER);
-				if (idMap.get(l1)!= null && idMap.get(l2)!=null) {
-				result.add(new CoppiaLocali(idMap.get(l1),idMap.get(l2), peso));
-				}
+			
 			}
 			conn.close();
-			return result;
+			return peso;
 		}catch (SQLException e) {
 			e.printStackTrace();
+			return 0;
+		}
+	}	
+	
+	
+	public List<Locale> getLocaliRecensioni(double x){
+		String sql="SELECT b.business_id AS id, b.business_name AS name, b.latitude AS lati, b.longitude AS longi "
+				+ "FROM business b "
+				+ "WHERE b.stars>=?";
+List<Locale> result= new ArrayList<Locale>();
+		
+		Connection conn = DBConnect.getConnection();
+
+		try {
+			PreparedStatement st = conn.prepareStatement(sql);
+			st.setDouble(1,x);
+			ResultSet res = st.executeQuery();
+			while (res.next()) {
+				Locale loc = new Locale(res.getString("id"), res.getString("name"), res.getDouble("lati"), res.getDouble("longi"));
+				result.add(loc);
+			
+			}
+			res.close();
+			st.close();
+			conn.close();
+			return result;
+			
+		} catch (SQLException e) {
+			e.printStackTrace();
 			return null;
-		}*/
-		
-		
-		public List<Locale> getLocali(String citta, Map<String, Locale>idMap) {
-			String sql="SELECT business_id, business_name, latitude, longitude "
-					+ "FROM business "
-					+ "WHERE city=?";
-			List<Locale> result= new ArrayList<Locale>();
-			Connection conn= DBConnect.getConnection();
-			try {
-				PreparedStatement st = conn.prepareStatement(sql);
-				st.setString(1, citta);
-				ResultSet res = st.executeQuery();
-				while (res.next()) {
-					Locale loc= new Locale(res.getString("business_id"), res.getString("business_name"), res.getDouble("longitude"), res.getDouble("latitude"));
-					idMap.put(loc.getBusiness_id(), loc);
-					result.add(loc);
-				}
-				conn.close();
-				return result;
-				
-			}
-			catch (SQLException e) {
-				e.printStackTrace();
-				return null;
-			}
-		}
-
-		public List<CoppiaLocali> getCoppiaLocali(String citta, Map<String, Locale> idMap) {
-			String sql= "SELECT b1.business_id AS l1, b2.business_id AS l2, b1.longitude AS lo1, b1.latitude AS la1, b2.longitude AS lo2, b2.latitude AS la2 "
-					+ "FROM business b1, business b2 "
-					+ "WHERE b1.city=? AND b2.city=?";
-				
-			Connection conn = DBConnect.getConnection();
-			List<CoppiaLocali> result= new ArrayList<CoppiaLocali>();
-			try {
-				PreparedStatement st = conn.prepareStatement(sql);
-				st.setString(1, citta);
-				st.setString(2, citta);
-				ResultSet res = st.executeQuery();
-				while(res.next()) {
-					Locale l1= idMap.get(res.getString("l1"));
-					Locale l2= idMap.get(res.getString("l2"));
-					idMap.put(l1.getBusiness_id(), l1);
-					idMap.put(l2.getBusiness_id(), l2);
-					
-					LatLng peso1= new LatLng(res.getDouble("la1"), res.getDouble("lo1"));
-					LatLng peso2= new LatLng(res.getDouble("la2"), res.getDouble("lo2"));
-					double peso=LatLngTool.distance(peso1, peso2, LengthUnit.KILOMETER);
-					if (l1!=null && l2!=null && idMap.get("l1")!=null && idMap.get("l2")!=null) {
-					result.add(new CoppiaLocali(l1, l2, peso));
-					}
-				}
-				conn.close();
-				return result;
-			}catch (SQLException e) {
-				e.printStackTrace();
-				return null;
-			}
-			
-		}
-
-		public double getPeso(Locale l1, Locale l2) {
-			String sql="SELECT b1.business_id AS l1, b2.business_id AS l2, b1.longitude AS lo1, b1.latitude AS la1, b2.longitude AS lo2, b2.latitude AS la2 "
-					+ "FROM business b1, business b2 "
-					+ "WHERE b1.business_id=? AND b2.business_id=?";
-					
-			Connection conn= DBConnect.getConnection();
-			
-			try {
-				PreparedStatement st = conn.prepareStatement(sql);
-				st.setString(1, l1.getBusiness_id());
-				st.setString(2, l2.getBusiness_id());
-				ResultSet res=st.executeQuery();
-				double peso=0;
-				if (res.next()) {
-					
-					LatLng peso1= new LatLng(res.getDouble("la1"), res.getDouble("lo1"));
-					LatLng peso2= new LatLng(res.getDouble("la2"), res.getDouble("lo2"));
-				 peso=LatLngTool.distance(peso1, peso2, LengthUnit.KILOMETER);
-				}
-				conn.close();
-				return peso;
-			}catch (SQLException e) {
-				e.printStackTrace();
-				return 0;
-			}
 		}
 		
-	
-	
-	
+	}
 
 	
 	

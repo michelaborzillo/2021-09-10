@@ -5,9 +5,11 @@
 package it.polito.tdp.yelp;
 
 import java.net.URL;
+import java.util.List;
 import java.util.ResourceBundle;
 
 import it.polito.tdp.yelp.model.Locale;
+import it.polito.tdp.yelp.model.LocalePiuDistante;
 import it.polito.tdp.yelp.model.Model;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -52,25 +54,55 @@ public class FXMLController {
     
     @FXML
     void doCreaGrafo(ActionEvent event) {
-    	String citta=cmbCitta.getValue();
-    	this.model.creaGrafo(citta);
-    	txtResult.appendText("Grafo creato!\n");
-		txtResult.appendText("VERTICI: "+this.model.nVertici()+"\n");
-    	txtResult.appendText("ARCHI: "+this.model.nArchi()+"\n");
+    txtResult.clear();
+    String citta= cmbCitta.getValue();
+    if (citta== null) {
+    	txtResult.setText("Inserire una citta");
+    }
+    model.creaGrafo(citta);
+    txtResult.appendText("Grafo creato!\n");
+	txtResult.appendText("VERTICI: "+this.model.nVertici()+"\n");
+	txtResult.appendText("ARCHI: "+this.model.nArchi()+"\n");
+	cmbB1.getItems().clear();
+	cmbB1.getItems().addAll(model.addVertici());
+	cmbB2.getItems().clear();
+	cmbB2.getItems().addAll(model.addVertici()); 
     	
-    	cmbB1.getItems().addAll(model.getLocaliGrafo());
     }
 
     @FXML
     void doCalcolaLocaleDistante(ActionEvent event) {
-    //	Locale l=cmbB1.getValue();
-    	//this.model.getArchiPesoMax(l);
+   Locale b1= cmbB1.getValue();
+   if (b1==null) {
+		txtResult.setText("Devi selezionare un locale dopo aver creato il grafo");
+		return;
+	}
+    	LocalePiuDistante result= model.getLocalePiuDistante(b1);
+    	txtResult.setText(result.toString());
     	
     }
 
     @FXML
     void doCalcolaPercorso(ActionEvent event) {
-
+    	Locale b1= cmbB1.getValue();
+    	Locale b2= cmbB2.getValue();
+    	String x= txtX2.getText();
+    	double soglia;
+    	try {
+    		soglia=Double.parseDouble(x);
+    	} catch (NumberFormatException e ) {
+    		txtResult.appendText("ERRORE FORMATO");
+    		return;
+    	}
+    	if (b2==null) {
+    		txtResult.setText("Selezionare il locale dopo aver creato il grafo");
+    	}
+    	List<Locale> result= this.model.calcolaPercorso(b1, b2, soglia);
+    	for (Locale s: result) {
+    		txtResult.appendText("\n"+s+"\n");
+    	}
+    	
+    	
     }
 
 
